@@ -1,6 +1,11 @@
 # Simple Livecode Git Deploy Script
 _Automatically deploy code using Livecode and Git._
 
+# STATE OF THE PROJECT
+
+This script is not funcitonal yet. Updates on progress will get posted
+here.
+
 ## Requirements
 
 * `git` and `rsync` are required on the server that's running the script
@@ -19,7 +24,7 @@ _Automatically deploy code using Livecode and Git._
  * Configure your git repository to call this script when the code is updated.
    The instructions for Git, GitHub (coming soon) and Bitbucket (coming soon) are below.
 
-### GitHub
+### GitHub - untested
 
  1. _(This step is only needed for private repositories)_ Go to
     `https://github.com/USERNAME/REPOSITORY/settings/keys` and add your server
@@ -31,7 +36,7 @@ _Automatically deploy code using Livecode and Git._
  1. Make sure that the **Active** checkbox is checked.
  1. Click **Add webhook**.
 
-### Bitbucket
+### Bitbucket - untested
 
  1. _(This step is only needed for private repositories)_ Go to
     `https://bitbucket.org/USERNAME/REPOSITORY/admin/deploy-keys` and add your
@@ -41,7 +46,7 @@ _Automatically deploy code using Livecode and Git._
  1. Enter the URL to your deployment script e.g. `http://example.com/deploy.lc?sat=YourSecretAccessTokenFromDeployFile`.
  1. Click **Save**.
 
-### Generic Git
+### Generic Git  - untested
 
  1. Configure the SSH keys.
  1. Add a executable `.git/hooks/post_receive` script that calls the script e.g.
