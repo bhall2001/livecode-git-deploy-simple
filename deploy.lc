@@ -1,0 +1,26 @@
+<?lc
+
+-- determine if request is from web or script
+try
+   put $_SERVER["QUERY_STRING"] into tQueryString
+   write "0" & CRLF to stdout
+catch e
+end try
+
+
+try   
+   
+   if $0 is not strictly nothing then
+      put $0 into tQueryString
+   end if
+   
+   
+   write "SHHH..." & tQueryString & CRLF to stdout
+   
+   write "1" & CRLF to stdout
+   start using stack "deploy.livecodescript"
+   write "2" & CRLF to stdout
+catch e
+   write "3" & CRLF to stdout
+   write e & CRLF to stdout
+end try
