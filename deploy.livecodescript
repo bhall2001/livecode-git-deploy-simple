@@ -153,7 +153,7 @@ command executeDeploy
   if (!defined('TMP_DIR')) define('TMP_DIR', '/tmp/spgd-'.md5(REMOTE_REPOSITORY).'/');
   */
   if gConfigA["TMP_DIR"] is empty then
-    put "/tmp/spgd-" & md5Digest(gConfigA["REMOTE_REPOSITORY"]) & "/" into gConfigA["TMP_DIR"]
+    put "/tmp/slgd-" & md5Digest(gConfigA["REMOTE_REPOSITORY"]) & "/" into gConfigA["TMP_DIR"]
   end if
   
   /**
