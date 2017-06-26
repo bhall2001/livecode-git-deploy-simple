@@ -7,10 +7,13 @@
 * @version 0.0.1
 * @link    https://github.com/bhall2001/simple-livecode-git-deploy/
 */
+global gGlobalsA
 global gConfigA
 
 local sConfigFile
 local sFilename
+local sHeaderA
+local sHeaderIndex
 
 on libraryStack
 
@@ -231,10 +234,19 @@ command executeDeploy
   ob_start();
   
   ?>
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-  <meta charset="utf-8">
+  */
+  if (gGlobalsA["$_GET"]["sat"] is empty) \
+        or (gGlobalsA["$_GET"]["sat"] is not gConfigA["SECRET_ACCESS_TOKEN"]) \
+        or (gConfigA["SECRET_ACCESS_TOKEN"] is "BetterChangeMeNowOrSufferTheConsequences" ) then
+    obHeader gGlobalsA["$_SERVER"]["SERVER_PROTOCOL"] & "403 Forbidden", true, 403
+  end if
+  
+  
+  obPut "<!DOCTYPE html>" & return & \
+        "<html lang='en'>" & return & \
+        "<head>" & return & \
+        "<meta charset='utf-8'>" & return
+  /*
   <meta name="robots" content="noindex">
   <title>Simple PHP Git deploy script</title>
   <style>
@@ -466,3 +478,14 @@ command executeDeploy
   </html>
   */
 end executeDeploy
+
+command obHeader pHeader, pInit, pCode
+  if pInit then
+    put "" into sHeaderA
+    put 0 into sHeaderIndex
+  end if
+  
+  add 1 to sHeaderIndex
+  put pHeader into sHeaderA[sHeaderIndex]
+  
+end obHeader
