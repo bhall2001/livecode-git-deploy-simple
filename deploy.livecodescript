@@ -11,6 +11,7 @@ global gGlobalsA
 global gConfigA
 
 local sConfigFile
+local sOutput
 local sFilename
 local sHeaderA
 local sHeaderIndex
@@ -26,6 +27,7 @@ end libraryStack
 
 command executeDeploy
   local tFilepath, tBasename
+  local x
   
   // =========================================[ Configuration start ]===
   
@@ -242,7 +244,7 @@ command executeDeploy
   end if
   
   
-  obPut "<!DOCTYPE html>" & return & \
+  obWrite "<!DOCTYPE html>" & return & \
         "<html lang='en'>" & return & \
         "<head>" & return & \
         "<meta charset='utf-8'>" & return
@@ -487,5 +489,26 @@ command obHeader pHeader, pInit, pCode
   
   add 1 to sHeaderIndex
   put pHeader into sHeaderA[sHeaderIndex]
-  
 end obHeader
+
+command obWrite pData
+    put pData & return into sOutput
+end obWrite
+
+command obFlush
+    -- write the output buffer to stdout
+    write sOutput to stdout
+    
+    -- check if server editor is running and update UI if it is 
+    if "Blade Runner" is in the stacks then
+        send "brUIUpdate sOutput" to stack "Blade Runner" in 1 milliseconds
+    end if
+    
+    -- reset the output buffer
+    obStart
+    
+end obFlush
+
+command obStart
+    put "" into sOutput
+end obStart
