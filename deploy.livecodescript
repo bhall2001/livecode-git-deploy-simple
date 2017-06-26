@@ -16,6 +16,8 @@ on libraryStack
 
    write "Starting deploy.livecodescript" & CRLF to stdout
    
+   put "BetterChangeMeNowOrSufferTheConsequences" into gGlobalsA["$_GET"]["sat"]
+   
    executeDeploy
 end libraryStack
 
