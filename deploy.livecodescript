@@ -492,23 +492,32 @@ command obHeader pHeader, pInit, pCode
 end obHeader
 
 command obWrite pData
-    put pData & return into sOutput
+    put pData after sOutput
+    
+    obUpdateBR
 end obWrite
+
+command obPut pData
+    put pData & return after sOutput
+    
+    obUpdateBR
+end obPut
 
 command obFlush
     -- write the output buffer to stdout
     write sOutput to stdout
     
-    -- check if server editor is running and update UI if it is 
-    if "Blade Runner" is in the stacks then
-        send "brUIUpdate sOutput" to stack "Blade Runner" in 1 milliseconds
-    end if
-    
-    -- reset the output buffer
-    obStart
-    
+    obUpdateBR
 end obFlush
+
+command obUpdateBR
+        -- check if server editor is running and update UI if it is 
+    if  "BladeRunner.livecode" is in the stacks then
+         send "brUIUpdate" && urlEncode(sOutput) to stack "BladeRunner"
+    end if
+end obUpdateBR
 
 command obStart
     put "" into sOutput
+    obUpdateBR
 end obStart
