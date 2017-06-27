@@ -15,6 +15,9 @@ local sOutput
 local sFilename
 local sHeaderA
 local sHeaderIndex
+local sCommandA
+local sCommandIndex
+
 
 on libraryStack
 
@@ -28,6 +31,9 @@ end libraryStack
 command executeDeploy
     local tFilepath, tBasename
     local x
+    
+    put "" into sCommandA
+    put 1 into sCommandIndex
     
     // =========================================[ Configuration start ]===
     
@@ -262,7 +268,6 @@ command executeDeploy
     obPut "</head>"
     obPut "<body>"
     
-    /*
     if (gGlobalsA["$_GET"]["sat"] is empty) \
           or (gGlobalsA["$_GET"]["sat"] is not gConfigA["SECRET_ACCESS_TOKEN"]) then
         obPut "<h2>ACCESS DENIED!</h2>"
@@ -274,7 +279,6 @@ command executeDeploy
         obPut "<h2>You're suffering the consequences!<br>Change the SECRET_ACCESS_TOKEN from it's default value!</h2>"
         exit to top
     end if
-    */
     
     /*
     <?lc
@@ -329,7 +333,7 @@ command executeDeploy
     put "git" into tRequiredBinA[1]
     put "rsync" into tRequiredBinA[2]
     
-    -- check if we are backup the directory
+    -- check if we are backing up the directory
     if gConfigA["BACKUP_DIR"] is not empty then
         put "tar" into tRequiredBinA[3]
         
@@ -338,6 +342,7 @@ command executeDeploy
         
         -- now also check that the backup directory exists and is write-able
         if (there is not a folder gConfigA["BACKUP_DIR"])  then
+            ## TODO
         end if
     end if
     
@@ -357,9 +362,6 @@ command executeDeploy
     
     obPut "Deploying" && gConfigA["REMOTE_REPOSITORY"] & ";" & gConfigA["BRANCH"]
     obPut "to       " && gConfigA["TARGET_DIR"] 
-    
-    local tCommandIndex = 1
-    local tCommandA
     
     /*
     <?lc
@@ -394,20 +396,17 @@ command executeDeploy
     */
     
     if there is not a folder gConfigA["TMP_DIR"] then
-        put "git clone --depth=1 --branch" && gConfigA["BRANCH"] && \
+        addCommand "git clone --depth=1 --branch" && gConfigA["BRANCH"] && \
               gConfigA["REMOTE_REPOSITORY"] && \
-              gConfigA["TMP_DIR"] into tCommandA[tCommandIndex]
-        add 1 to tCommandIndex
+              gConfigA["TMP_DIR"]
     else
-        put "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
+        addCommand "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
               "--work-tree=" & gConfigA["TMP_DIR"] && \
-              "fetch --tags origin" && gConfigA["BRANCH"] into tCommandA[tCommandIndex]
-        add 1 to tCommandIndex
+              "fetch --tags origin" && gConfigA["BRANCH"]
         
-        put "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
+        addCommand "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
               "--work-tree=" & gConfigA["TMP_DIR"] && \
-              "reset --hard FETCH_HEAD" into tCommandA[tCommandIndex]
-        add 1 to tCommandIndex
+              "reset --hard FETCH_HEAD"
     end if
     
     
@@ -417,7 +416,10 @@ command executeDeploy
     $commands[] = sprintf(
     'git submodule update --init --recursive'
     );
+    */
+    put "git submodule update --init --recursive" into tCommandA[tCommandIndex]
     
+    /*
     // Describe the deployed version
     if (defined('VERSION_FILE') && VERSION_FILE !== '') {
     $commands[] = sprintf(
@@ -486,10 +488,10 @@ command executeDeploy
     foreach ($commands as $command) {
     */
     local tResponse
-    repeat with i = 1 to number of elements of tCommandA
-        put shelly(tCommandA[i]) into tResponse
+    repeat with i = 1 to number of elements of sCommandA
+        put shelly(sCommandA[i]) into tResponse
         
-        obPut "<span class='prompt'>$</span> <span class='command'>" & tCommandA[i] & "</span>"
+        obPut "<span class='prompt'>$</span> <span class='command'>" & sCommandA[i] & "</span>"
         obWrite "<div class='output'>" & tResponse & "</div>"
         obFlush
         
@@ -562,6 +564,11 @@ command executeDeploy
     obPut "</html>"
     obFlush
 end executeDeploy
+
+command addCommand pCommand
+    put pCommand into sCommandA[sCommandIndex]
+    add 1 to sCommandIndex
+end addCommand
 
 command obHeader pHeader, pInit, pCode
   if pInit then
