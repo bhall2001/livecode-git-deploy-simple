@@ -521,3 +521,7 @@ command obStart
     put "" into sOutput
     obUpdateBR
 end obStart
+
+function shelly pCommand
+    return char 1 to -2 of (shell(pCommand))
+end shelly
