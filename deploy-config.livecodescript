@@ -22,7 +22,7 @@ on libraryStack
     *
     * @var string
     */
-    put "BetterChangeMeNowOrSufferTheConsequences" into gConfigA["SECRET_ACCESS_TOKEN"]
+    put "thisisatest" into gConfigA["SECRET_ACCESS_TOKEN"]
     
     /**
     * The address of the remote Git repository that contains the code that's being
