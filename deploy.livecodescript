@@ -166,7 +166,7 @@ command executeDeploy
     if (!defined('TMP_DIR')) define('TMP_DIR', '/tmp/spgd-'.md5(REMOTE_REPOSITORY).'/');
     */
     if gConfigA["TMP_DIR"] is empty then
-        put "/tmp/slgd-" & md5Digest(gConfigA["REMOTE_REPOSITORY"]) & "/" into gConfigA["TMP_DIR"]
+        put "/tmp/slgd-" & base64Encode(md5Digest(gConfigA["REMOTE_REPOSITORY"])) & "/" into gConfigA["TMP_DIR"]
     end if
     
     /**
@@ -417,7 +417,7 @@ command executeDeploy
     'git submodule update --init --recursive'
     );
     */
-    put "git submodule update --init --recursive" into tCommandA[tCommandIndex]
+    addCommand "git submodule update --init --recursive"
     
     /*
     // Describe the deployed version
@@ -429,8 +429,14 @@ command executeDeploy
     , VERSION_FILE
     );
     }
+    */
+    if gConfigA["VERSION_FILE"] is not empty then
+        addCommand "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
+              "--work-tree=" & gConfigA["TMP_DIR"] &&  \
+              "describe --always >" &&  gConfigA["VERSION_FILE"]
+    end if
     
-    
+    /*
     // Backup the TARGET_DIR
     // without the BACKUP_DIR for the case when it's inside the TARGET_DIR
     if (defined('BACKUP_DIR') && BACKUP_DIR !== false) {
@@ -444,19 +450,26 @@ command executeDeploy
     , TARGET_DIR // We're backing up this directory into BACKUP_DIR
     );
     }
+    */
+    if (gConfigA["BACKUP_DIR"] is not false) and (gConfigA["BACKUP_DIR"] is not empty) then
+        local tTargetBase, tDate, tOutputDate
+        
+        set the itemDelimiter to "/"
+        put item -1 of gConfigA["TARGET_DIR"] into tTargetBase
+        put the internet date into tDate
+        convert tDate to dateitems
+        set the itemDelimiter to ","
+        put item 1 of tDate & format("%02s", item 2 of tDate) & format("%02s", item 3 of tDate) & \
+              format("%02s", item 4 of tDate) & format("%02s", item 5 of tDate) & format("%02s", item 6 of tDate) into tOutputDate
+        
+        addCommand "tar -zcvf" && gConfigA["BACKUP_DIR"] & tTargetBase & "-" & \
+              base64Encode(md5Digest(gConfigA["TARGET_DIR"])) & "-" & tOutputDate & ".tar.gz" && \
+              gConfigA["TARGET_DIR"]
+        --exclude=" & gConfigA["BACKUP_DIR"] & "*" && "
+        
+    end if
     
-    // Invoke composer
-    if (defined('USE_COMPOSER') && USE_COMPOSER === true) {
-    $commands[] = sprintf(
-    'composer --no-ansi --no-interaction --no-progress --working-dir=%s install %s'
-    , TMP_DIR
-    , (defined('COMPOSER_OPTIONS')) ? COMPOSER_OPTIONS : ''
-    );
-    if (defined('COMPOSER_HOME') && is_dir(COMPOSER_HOME)) {
-    putenv('COMPOSER_HOME='.COMPOSER_HOME);
-    }
-    }
-    
+    /*  
     // ==================================================[ Deployment ]===
     
     // Compile exclude parameters
@@ -464,6 +477,19 @@ command executeDeploy
     foreach (unserialize(EXCLUDE) as $exc) {
     $exclude .= ' --exclude='.$exc;
     }
+    */
+    local tExclude, tDelete
+    repeat for each element excludeMe in gConfigA["EXCLUDE"]
+        put " --exclude=" & excludeMe into tExclude
+    end repeat
+    
+    if (gConfigA["DELETE_FILES"]) then
+        put "--delete-after" into tDelete
+    else
+        put "" into tDelete
+    end if
+    
+    /*
     // Deployment command
     $commands[] = sprintf(
     'rsync -rltgoDzvO %s %s %s %s'
@@ -472,7 +498,11 @@ command executeDeploy
     , (DELETE_FILES) ? '--delete-after' : ''
     , $exclude
     );
+    */
+    addCommand "rsync -rltgoDzvO" && gConfigA["TMP_DIR"] && gConfigA["TARGET_DIR"] && \
+          tDelete && tExclude
     
+    /*
     // =======================================[ Post-Deployment steps ]===
     
     // Remove the TMP_DIR (depends on CLEAN_UP)
