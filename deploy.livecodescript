@@ -17,16 +17,18 @@ local sHeaderA
 local sHeaderIndex
 local sCommandA
 local sCommandIndex
+local sPort = 42142
+
 
 
 on libraryStack
-
    write "Starting deploy.livecodescript" & CRLF to stdout
    
    put "thisisatest" into gGlobalsA["$_GET"]["sat"]
    
    executeDeploy
 end libraryStack
+
 
 command executeDeploy
     local tFilepath, tBasename
@@ -252,21 +254,7 @@ command executeDeploy
         obHeader gGlobalsA["$_SERVER"]["SERVER_PROTOCOL"] & "403 Forbidden", true, 403
     end if
     
-    obPut "<!DOCTYPE html>"
-    obPut "<html lang='en'>"
-    obPut "<head>"
-    obPut "<meta charset='utf-8'>"
-    obPut "<meta name='robots' content='noindex'>"
-    obPut "<title>Simple PHP Git deploy script</title>"
-    obPut "<style>"
-    obPut "body { padding: 0 1em; background: #222; color: #fff; }"
-    obPut "h2, .error { color: #c33; }"
-    obPut ".prompt { color: #6be234; }"
-    obPut ".command { color: #729fcf; }"
-    obPut ".output { color: #999; }"
-    obPut "</style>"
-    obPut "</head>"
-    obPut "<body>"
+    put obMergeFile(tFilePath & "htmlHeader.lc")
     
     if (gGlobalsA["$_GET"]["sat"] is empty) \
           or (gGlobalsA["$_GET"]["sat"] is not gConfigA["SECRET_ACCESS_TOKEN"]) then
@@ -357,7 +345,7 @@ command executeDeploy
         obFlush
     end repeat
     
-    obPut  "Environment OK."
+    obPut "Environment OK."
     obPut "Using configuration defined in" && sConfigFile
     
     obPut "Deploying" && gConfigA["REMOTE_REPOSITORY"] & ";" & gConfigA["BRANCH"]
@@ -409,15 +397,15 @@ command executeDeploy
               "reset --hard FETCH_HEAD"
     end if
     
-    
-    
     /*
     // Update the submodules
     $commands[] = sprintf(
     'git submodule update --init --recursive'
     );
     */
-    addCommand "git submodule update --init --recursive"
+    if (gConfigA["UPDATE_SUBMODULES"]) then
+        addCommand "git submodule update --init --recursive"
+    end if
     
     /*
     // Describe the deployed version
@@ -555,6 +543,9 @@ command executeDeploy
     </div>
     '
     );
+    */
+    
+    /*
     if (CLEAN_UP) {
     $tmp = shell_exec($commands['cleanup']);
     printf('
@@ -569,6 +560,19 @@ command executeDeploy
     , htmlentities(trim($tmp))
     );
     }
+    */
+    if gConfigA["CLEAN_UP"] then
+        local tCleanupCommand
+        put "rm -rf" && gConfigA["TMP_DIR"] into tCleanupCommand
+        put shelly(tCleanupCommand) into tResponse
+        
+        obPut "Cleaning up Temporary files..."
+        obPut "<span class='prompt'>$</span> <span class='command'>" & tCleanupCommand & "</span>"
+        obWrite "<div class='output'>" & tResponse & "</div>"
+        obFlush
+    end if
+    
+    /*
     $error = sprintf(
     'Deployment error on %s using %s!'
     , $_SERVER['HTTP_HOST']
@@ -595,10 +599,12 @@ command executeDeploy
     obFlush
 end executeDeploy
 
+
 command addCommand pCommand
     put pCommand into sCommandA[sCommandIndex]
     add 1 to sCommandIndex
 end addCommand
+
 
 command obHeader pHeader, pInit, pCode
   if pInit then
@@ -610,17 +616,20 @@ command obHeader pHeader, pInit, pCode
   put pHeader into sHeaderA[sHeaderIndex]
 end obHeader
 
+
 command obWrite pData
     put pData after sOutput
     
     obUpdateBR
 end obWrite
 
+
 command obPut pData
     put pData & return after sOutput
     
     obUpdateBR
 end obPut
+
 
 command obFlush
     -- write the output buffer to stdout
@@ -629,17 +638,40 @@ command obFlush
     obUpdateBR
 end obFlush
 
+
 command obUpdateBR
-        -- check if server editor is running and update UI if it is 
+    local tOutputEncoded
+    
+    -- check if server editor is running and update UI if it is 
     if  "BladeRunner.livecode" is in the stacks then
-         send "brUIUpdate" && urlEncode(sOutput) to stack "BladeRunner"
+        send "brUIUpdate" && urlEncode(sOutput) to stack "BladeRunner"
     end if
+    
 end obUpdateBR
 
+
 command obStart
+    close socket "127.0.0.1:" & sPort
+    
     put "" into sOutput
     obUpdateBR
 end obStart
+
+
+function obMergeFile pFilePath
+    local tPageBuffer, tBuffer
+    
+    put URL format("binfile:%s", pFilePath) into tPageBuffer
+    if the result <> empty then
+         throw "ERROR: Failed to read file!"
+    end if
+    
+    put merge(tPageBuffer) into tBuffer
+    obWrite tBuffer
+    
+    return tBuffer
+    
+end obMergeFile
 
 function shelly pCommand
     return char 1 to -2 of (shell(pCommand))
