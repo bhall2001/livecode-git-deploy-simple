@@ -113,7 +113,7 @@ on libraryStack
     * @var string Full backup directory path e.g. `/tmp/`
     */
     /*define('BACKUP_DIR', false);*/
-    put "" into gConfigA["BACKUP_DIR"]
+    put "/tmp/" into gConfigA["BACKUP_DIR"]
     
     /**
     * OPTIONAL
