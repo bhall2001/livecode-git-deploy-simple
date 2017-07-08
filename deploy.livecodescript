@@ -20,7 +20,7 @@ on libraryStack
    put "" into sCommandA
     
    put "thisisatest" into gGlobalsA["$_GET"]["sat"]
-   
+         
    executeDeploy
 end libraryStack
 
@@ -33,15 +33,18 @@ command executeDeploy
    /*=================[ Configuration start ]=================*/
    
    -- set the defaultFolder to the folder containing the script
+   local tOldDelim
+   
+   put the itemDelimiter into tOldDelim
    set the itemDelimiter to slash
    put the effective filename of this stack into tFilename
    put item 1 to -2 of tFilename & "/" into tFilepath
    put the short name of this stack into tBasename
    put tFilePath & tBasename & "-config.livecodescript" into tConfigFile
+   set the itemDelimiter to tOldDelim
    
    -- load configuration file
    if there is a file tConfigFile then
-      ##start using stack sConfigFile
       insert the script of stack tConfigFile into back
       put getConfigs() into sConfigA
    else
@@ -73,56 +76,14 @@ command executeDeploy
       exit to top
    end if
    
-   /*
-   <?lc
-   if (!isset($_GET['sat']) || $_GET['sat'] !== SECRET_ACCESS_TOKEN) {
-   header($_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden', true, 403);
-   die('<h2>ACCESS DENIED!</h2>');
-   }
-   if (SECRET_ACCESS_TOKEN === 'BetterChangeMeNowOrSufferTheConsequences') {
-   header($_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden', true, 403);
-   die("<h2>You're suffering the consequences!<br>Change the SECRET_ACCESS_TOKEN from it's default value!</h2>");
-   }
-   
-   ?>
-   */
-   
    obPut "<pre>"
    obPut "Checking the environment..."
    obPut "Running as <b>" & shelly("whoami") & "</b>."
    obFlush
    
-   /*
-   <?lc
-   // Check if the required programs are available
-   $requiredBinaries = array('git', 'rsync');
-   if (defined('BACKUP_DIR') && BACKUP_DIR !== false) {
-   $requiredBinaries[] = 'tar';
-   if (!is_dir(BACKUP_DIR) || !is_writable(BACKUP_DIR)) {
-   header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
-   die(sprintf('<div class="error">BACKUP_DIR `%s` does not exists or is not writeable.</div>', BACKUP_DIR));
-   }
-   }
-   if (defined('USE_COMPOSER') && USE_COMPOSER === true) {
-   $requiredBinaries[] = 'composer --no-ansi';
-   }
-   foreach ($requiredBinaries as $command) {
-   $path = trim(shell_exec('which '.$command));
-   if ($path == '') {
-   header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
-   die(sprintf('<div class="error"><b>%s</b> not available. It needs to be installed on the server for this script to work.</div>', $command));
-   } else {
-   $version = explode("\n", shell_exec($command.' --version'));
-   printf('<b>%s</b> : %s'."\n"
-   , $path
-   , $version[0]
-   );
-   }
-   }
+   -- Check if the required programs are available
+   local tRequiredBinA, tBinPath
    
-   ?>
-   */
-   local tRequiredBinA, tPath
    put "git" into tRequiredBinA[1]
    put "rsync" into tRequiredBinA[2]
    
@@ -131,7 +92,6 @@ command executeDeploy
       put "tar" into tRequiredBinA[3]
       
       set the defaultFolder to sConfigA["BACKUP_DIR"]
-      //obWrite (item 10 of the detailed folders)
       
       -- now also check that the backup directory exists and is write-able
       if (there is not a folder sConfigA["BACKUP_DIR"])  then
@@ -139,9 +99,11 @@ command executeDeploy
       end if
    end if
    
+   -- check that binaries we need exist
    repeat for each element aCommand in tRequiredBinA
-      put shell("which" && aCommand) into tPath
-      if tPath is empty then
+      put shell("which" && aCommand) into tBinPath
+      if tBinPath is empty then
+         -- binary not found so exit
          obPut "Command" && aCommand && "not installed"
          exit to top
       else
@@ -156,37 +118,7 @@ command executeDeploy
    obPut "Deploying" && sConfigA["REMOTE_REPOSITORY"] & ";" & sConfigA["BRANCH"]
    obPut "to       " && sConfigA["TARGET_DIR"] 
    
-   /*
-   <?lc
-   // The commands
-   $commands = array();
-   
-   // ========================================[ Pre-Deployment steps ]===
-   
-   if (!is_dir(TMP_DIR)) {
-   // Clone the repository into the TMP_DIR
-   $commands[] = sprintf(
-   'git clone --depth=1 --branch %s %s %s'
-   , BRANCH
-   , REMOTE_REPOSITORY
-   , TMP_DIR
-   );
-   } else {
-   // TMP_DIR exists and hopefully already contains the correct remote origin
-   // so we'll fetch the changes and reset the contents.
-   $commands[] = sprintf(
-   'git --git-dir="%s.git" --work-tree="%s" fetch --tags origin %s'
-   , TMP_DIR
-   , TMP_DIR
-   , BRANCH
-   );
-   $commands[] = sprintf(
-   'git --git-dir="%s.git" --work-tree="%s" reset --hard FETCH_HEAD'
-   , TMP_DIR
-   , TMP_DIR
-   );
-   }
-   */
+   // =================[ Pre-Deployment steps ]===
    
    if there is not a folder sConfigA["TMP_DIR"] then
       _AddCommand "git clone --depth=1 --branch" && sConfigA["BRANCH"] && \
@@ -202,33 +134,20 @@ command executeDeploy
             "reset --hard FETCH_HEAD"
    end if
    
-   /*
-   // Update the submodules
-   $commands[] = sprintf(
-   'git submodule update --init --recursive'
-   );
-   */
+   -- Update the submodules
    if (sConfigA["UPDATE_SUBMODULES"]) then
       _AddCommand "git submodule update --init --recursive"
    end if
    
-   /*
-   // Describe the deployed version
-   if (defined('VERSION_FILE') && VERSION_FILE !== '') {
-   $commands[] = sprintf(
-   'git --git-dir="%s.git" --work-tree="%s" describe --always > %s'
-   , TMP_DIR
-   , TMP_DIR
-   , VERSION_FILE
-   );
-   }
-   */
+   
+   -- Describe the deployed version
    if sConfigA["VERSION_FILE"] is not empty then
       _AddCommand "git --git-dir=" & sConfigA["TMP_DIR"] & ".git" && \
             "--work-tree=" & sConfigA["TMP_DIR"] &&  \
             "describe --always >" &&  sConfigA["VERSION_FILE"]
    end if
    
+   ## TODO Handle Exclude
    /*
    // Backup the TARGET_DIR
    // without the BACKUP_DIR for the case when it's inside the TARGET_DIR
@@ -244,7 +163,7 @@ command executeDeploy
    );
    }
    */
-   if (sConfigA["BACKUP_DIR"] is not false) and (sConfigA["BACKUP_DIR"] is not empty) then
+   if (sConfigA["BACKUP_DIR"] is not "") then
       local tTargetBase, tDate, tOutputDate
       
       set the itemDelimiter to "/"
@@ -262,15 +181,9 @@ command executeDeploy
       
    end if
    
-   /*  
    // ==================================================[ Deployment ]===
    
-   // Compile exclude parameters
-   $exclude = '';
-   foreach (unserialize(EXCLUDE) as $exc) {
-   $exclude .= ' --exclude='.$exc;
-   }
-   */
+   -- Assemble exclude parameters
    local tExclude, tDelete
    repeat for each element excludeMe in sConfigA["EXCLUDE"]
       put " --exclude=" & excludeMe into tExclude
@@ -282,34 +195,11 @@ command executeDeploy
       put "" into tDelete
    end if
    
-   /*
-   // Deployment command
-   $commands[] = sprintf(
-   'rsync -rltgoDzvO %s %s %s %s'
-   , TMP_DIR
-   , TARGET_DIR
-   , (DELETE_FILES) ? '--delete-after' : ''
-   , $exclude
-   );
-   */
+   -- Deployment command
    _AddCommand "rsync -rltgoDzvO" && sConfigA["TMP_DIR"] && sConfigA["TARGET_DIR"] && \
          tDelete && tExclude
    
-   /*
-   // =======================================[ Post-Deployment steps ]===
-   
-   // Remove the TMP_DIR (depends on CLEAN_UP)
-   if (CLEAN_UP) {
-   $commands['cleanup'] = sprintf(
-   'rm -rf %s'
-   , TMP_DIR
-   );
-   }
-   
-   // =======================================[ Run the command steps ]===
-   $output = '';
-   foreach ($commands as $command) {
-   */
+   // =======================[ Run the command steps ]===
    local tResponse
    repeat with i = 1 to number of elements of sCommandA
       put shelly(sCommandA[i]) into tResponse
@@ -317,7 +207,6 @@ command executeDeploy
       obPut "<span class='prompt'>$</span> <span class='command'>" & sCommandA[i] & "</span>"
       obWrite "<div class='output'>" & tResponse & "</div>"
       obFlush
-      
    end repeat
    /*
    set_time_limit(TIME_LIMIT); // Reset the time limit for each command
@@ -350,28 +239,15 @@ command executeDeploy
    );
    */
    
-   /*
-   if (CLEAN_UP) {
-   $tmp = shell_exec($commands['cleanup']);
-   printf('
+   // =======================================[ Post-Deployment steps ]===
    
-   
-   Cleaning up temporary files ...
-   
-   <span class="prompt">$</span> <span class="command">%s</span>
-   <div class="output">%s</div>
-   '
-   , htmlentities(trim($commands['cleanup']))
-   , htmlentities(trim($tmp))
-   );
-   }
-   */
+   -- Remove the TMP_DIR (depends on CLEAN_UP)
    if sConfigA["CLEAN_UP"] then
+      obPut "Cleaning up Temporary files..."
       local tCleanupCommand
       put "rm -rf" && sConfigA["TMP_DIR"] into tCleanupCommand
       put shelly(tCleanupCommand) into tResponse
       
-      obPut "Cleaning up Temporary files..."
       obPut "<span class='prompt'>$</span> <span class='command'>" & tCleanupCommand & "</span>"
       obWrite "<div class='output'>" & tResponse & "</div>"
       obFlush
