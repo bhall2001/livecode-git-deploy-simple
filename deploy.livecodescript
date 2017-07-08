@@ -8,9 +8,8 @@
 * @link    https://github.com/bhall2001/simple-livecode-git-deploy/
 */
 global gGlobalsA
-global gConfigA
 
-local sConfigFile
+local sConfigA
 local sOutput
 local sHeaderA
 local sCommandA
@@ -28,6 +27,7 @@ end libraryStack
 
 command executeDeploy
    local tFilepath, tFilename, tBasename
+   local tConfigFile
    local x
    
    /*=================[ Configuration start ]=================*/
@@ -37,36 +37,38 @@ command executeDeploy
    put the effective filename of this stack into tFilename
    put item 1 to -2 of tFilename & "/" into tFilepath
    put the short name of this stack into tBasename
-   put tFilePath & tBasename & "-config.livecodescript" into sConfigFile
+   put tFilePath & tBasename & "-config.livecodescript" into tConfigFile
    
    -- load configuration file
-   if there is a file sConfigFile then
-      start using stack sConfigFile
+   if there is a file tConfigFile then
+      ##start using stack sConfigFile
+      insert the script of stack tConfigFile into back
+      put getConfigs() into sConfigA
    else
       throw "404"
    end if
    
-  /*=================[ Configuration end ]=================*/
+   /*=================[ Configuration end ]=================*/
    
    -- initialize Output Buffer
    obStart
    
    if (gGlobalsA["$_GET"]["sat"] is empty) \
-         or (gGlobalsA["$_GET"]["sat"] is not gConfigA["SECRET_ACCESS_TOKEN"]) \
-         or (gConfigA["SECRET_ACCESS_TOKEN"] is "BetterChangeMeNowOrSufferTheConsequences" ) then
+         or (gGlobalsA["$_GET"]["sat"] is not sConfigA["SECRET_ACCESS_TOKEN"]) \
+         or (sConfigA["SECRET_ACCESS_TOKEN"] is "BetterChangeMeNowOrSufferTheConsequences" ) then
       obHeader gGlobalsA["$_SERVER"]["SERVER_PROTOCOL"] & "403 Forbidden", true, 403
    end if
    
    obPut obMergeFile(tFilePath & "htmlHeader.lc")
    
    if (gGlobalsA["$_GET"]["sat"] is empty) \
-         or (gGlobalsA["$_GET"]["sat"] is not gConfigA["SECRET_ACCESS_TOKEN"]) then
+         or (gGlobalsA["$_GET"]["sat"] is not sConfigA["SECRET_ACCESS_TOKEN"]) then
       obPut "<h2>ACCESS DENIED!</h2>"
       exit to top
    end if
    
    -- Dope slap if default access token used...
-   if gConfigA["SECRET_ACCESS_TOKEN"] is "BetterChangeMeNowOrSufferTheConsequences" then
+   if sConfigA["SECRET_ACCESS_TOKEN"] is "BetterChangeMeNowOrSufferTheConsequences" then
       obPut "<h2>You're suffering the consequences!<br>Change the SECRET_ACCESS_TOKEN from it's default value!</h2>"
       exit to top
    end if
@@ -125,14 +127,14 @@ command executeDeploy
    put "rsync" into tRequiredBinA[2]
    
    -- check if we are backing up the directory
-   if gConfigA["BACKUP_DIR"] is not empty then
+   if sConfigA["BACKUP_DIR"] is not empty then
       put "tar" into tRequiredBinA[3]
       
-      set the defaultFolder to gConfigA["BACKUP_DIR"]
+      set the defaultFolder to sConfigA["BACKUP_DIR"]
       //obWrite (item 10 of the detailed folders)
       
       -- now also check that the backup directory exists and is write-able
-      if (there is not a folder gConfigA["BACKUP_DIR"])  then
+      if (there is not a folder sConfigA["BACKUP_DIR"])  then
          ## TODO
       end if
    end if
@@ -149,10 +151,10 @@ command executeDeploy
    end repeat
    
    obPut "Environment OK."
-   obPut "Using configuration defined in" && sConfigFile
+   obPut "Using configuration defined in" && tConfigFile
    
-   obPut "Deploying" && gConfigA["REMOTE_REPOSITORY"] & ";" & gConfigA["BRANCH"]
-   obPut "to       " && gConfigA["TARGET_DIR"] 
+   obPut "Deploying" && sConfigA["REMOTE_REPOSITORY"] & ";" & sConfigA["BRANCH"]
+   obPut "to       " && sConfigA["TARGET_DIR"] 
    
    /*
    <?lc
@@ -186,17 +188,17 @@ command executeDeploy
    }
    */
    
-   if there is not a folder gConfigA["TMP_DIR"] then
-      _AddCommand "git clone --depth=1 --branch" && gConfigA["BRANCH"] && \
-            gConfigA["REMOTE_REPOSITORY"] && \
-            gConfigA["TMP_DIR"]
+   if there is not a folder sConfigA["TMP_DIR"] then
+      _AddCommand "git clone --depth=1 --branch" && sConfigA["BRANCH"] && \
+            sConfigA["REMOTE_REPOSITORY"] && \
+            sConfigA["TMP_DIR"]
    else
-      _AddCommand "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
-            "--work-tree=" & gConfigA["TMP_DIR"] && \
-            "fetch --tags origin" && gConfigA["BRANCH"]
+      _AddCommand "git --git-dir=" & sConfigA["TMP_DIR"] & ".git" && \
+            "--work-tree=" & sConfigA["TMP_DIR"] && \
+            "fetch --tags origin" && sConfigA["BRANCH"]
       
-      _AddCommand "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
-            "--work-tree=" & gConfigA["TMP_DIR"] && \
+      _AddCommand "git --git-dir=" & sConfigA["TMP_DIR"] & ".git" && \
+            "--work-tree=" & sConfigA["TMP_DIR"] && \
             "reset --hard FETCH_HEAD"
    end if
    
@@ -206,7 +208,7 @@ command executeDeploy
    'git submodule update --init --recursive'
    );
    */
-   if (gConfigA["UPDATE_SUBMODULES"]) then
+   if (sConfigA["UPDATE_SUBMODULES"]) then
       _AddCommand "git submodule update --init --recursive"
    end if
    
@@ -221,10 +223,10 @@ command executeDeploy
    );
    }
    */
-   if gConfigA["VERSION_FILE"] is not empty then
-      _AddCommand "git --git-dir=" & gConfigA["TMP_DIR"] & ".git" && \
-            "--work-tree=" & gConfigA["TMP_DIR"] &&  \
-            "describe --always >" &&  gConfigA["VERSION_FILE"]
+   if sConfigA["VERSION_FILE"] is not empty then
+      _AddCommand "git --git-dir=" & sConfigA["TMP_DIR"] & ".git" && \
+            "--work-tree=" & sConfigA["TMP_DIR"] &&  \
+            "describe --always >" &&  sConfigA["VERSION_FILE"]
    end if
    
    /*
@@ -242,21 +244,21 @@ command executeDeploy
    );
    }
    */
-   if (gConfigA["BACKUP_DIR"] is not false) and (gConfigA["BACKUP_DIR"] is not empty) then
+   if (sConfigA["BACKUP_DIR"] is not false) and (sConfigA["BACKUP_DIR"] is not empty) then
       local tTargetBase, tDate, tOutputDate
       
       set the itemDelimiter to "/"
-      put item -1 of gConfigA["TARGET_DIR"] into tTargetBase
+      put item -1 of sConfigA["TARGET_DIR"] into tTargetBase
       put the internet date into tDate
       convert tDate to dateitems
       set the itemDelimiter to ","
       put item 1 of tDate & format("%02s", item 2 of tDate) & format("%02s", item 3 of tDate) & \
             format("%02s", item 4 of tDate) & format("%02s", item 5 of tDate) & format("%02s", item 6 of tDate) into tOutputDate
       
-      _AddCommand "tar -zcvf" && gConfigA["BACKUP_DIR"] & tTargetBase & "-" & \
-            base64Encode(md5Digest(gConfigA["TARGET_DIR"])) & "-" & tOutputDate & ".tar.gz" && \
-            gConfigA["TARGET_DIR"]
-      --exclude=" & gConfigA["BACKUP_DIR"] & "*" && "
+      _AddCommand "tar -zcvf" && sConfigA["BACKUP_DIR"] & tTargetBase & "-" & \
+            base64Encode(md5Digest(sConfigA["TARGET_DIR"])) & "-" & tOutputDate & ".tar.gz" && \
+            sConfigA["TARGET_DIR"]
+      --exclude=" & sConfigA["BACKUP_DIR"] & "*" && "
       
    end if
    
@@ -270,11 +272,11 @@ command executeDeploy
    }
    */
    local tExclude, tDelete
-   repeat for each element excludeMe in gConfigA["EXCLUDE"]
+   repeat for each element excludeMe in sConfigA["EXCLUDE"]
       put " --exclude=" & excludeMe into tExclude
    end repeat
    
-   if (gConfigA["DELETE_FILES"]) then
+   if (sConfigA["DELETE_FILES"]) then
       put "--delete-after" into tDelete
    else
       put "" into tDelete
@@ -290,7 +292,7 @@ command executeDeploy
    , $exclude
    );
    */
-   _AddCommand "rsync -rltgoDzvO" && gConfigA["TMP_DIR"] && gConfigA["TARGET_DIR"] && \
+   _AddCommand "rsync -rltgoDzvO" && sConfigA["TMP_DIR"] && sConfigA["TARGET_DIR"] && \
          tDelete && tExclude
    
    /*
@@ -364,9 +366,9 @@ command executeDeploy
    );
    }
    */
-   if gConfigA["CLEAN_UP"] then
+   if sConfigA["CLEAN_UP"] then
       local tCleanupCommand
-      put "rm -rf" && gConfigA["TMP_DIR"] into tCleanupCommand
+      put "rm -rf" && sConfigA["TMP_DIR"] into tCleanupCommand
       put shelly(tCleanupCommand) into tResponse
       
       obPut "Cleaning up Temporary files..."
@@ -414,70 +416,71 @@ end _AddCommand
 command obHeader pHeader, pInit, pCode
    local tIndex
    
-  if pInit then
-    put "" into sHeaderA
-  end if
-  
-  put the number of elements of sHeaderA + 1 into tIndex
-  put pHeader into sHeaderA[tIndex]
+   if pInit then
+      put "" into sHeaderA
+   end if
+   
+   put the number of elements of sHeaderA + 1 into tIndex
+   put pHeader into sHeaderA[tIndex]
 end obHeader
 
 
 command obWrite pData
-    put pData after sOutput
-    
-    obUpdateBR
+   put pData after sOutput
+   
+   obUpdateBR
 end obWrite
 
 
 command obPut pData
-    put pData & return after sOutput
-    
-    obUpdateBR
+   put pData & return after sOutput
+   
+   obUpdateBR
 end obPut
 
 
 command obFlush
-    -- write the output buffer to stdout
-    write sOutput to stdout
-    
-    obUpdateBR
+   -- write the output buffer to stdout
+   write sOutput to stdout
+   
+   obUpdateBR
 end obFlush
 
 
 command obUpdateBR
-    local tOutputEncoded
-    
-    -- check if server editor is running and update UI if it is 
-    if  "BladeRunner.livecode" is in the stacks then
-        send "brUIUpdate" && urlEncode(sOutput) to stack "BladeRunner"
-    end if
-    
+   local tOutputEncoded
+   
+   -- check if server editor is running and update UI if it is 
+   if  "BladeRunner.livecode" is in the stacks then
+      send "brUIUpdate" && urlEncode(sOutput) to stack "BladeRunner"
+   end if
+   
 end obUpdateBR
 
 
 command obStart
-    close socket "127.0.0.1:" & sPort
-    
-    put "" into sOutput
-    obUpdateBR
+   close socket "127.0.0.1:" & sPort
+   
+   put "" into sOutput
+   obUpdateBR
 end obStart
 
 
 function obMergeFile pFilePath
-    local tPageBuffer, tBuffer
-    
-    put URL format("binfile:%s", pFilePath) into tPageBuffer
-    if the result <> empty then
-         throw "ERROR: Failed to read file!"
-    end if
-    
-    put merge(tPageBuffer) into tBuffer
-    obWrite tBuffer
-    
-    return tBuffer
-    
+   local tPageBuffer, tBuffer
+   
+   put URL format("binfile:%s", pFilePath) into tPageBuffer
+   if the result <> empty then
+      throw "ERROR: Failed to read file!"
+   end if
+   
+   put merge(tPageBuffer) into tBuffer
+   obWrite tBuffer
+   
+   return tBuffer
+   
 end obMergeFile
+
 
 function shelly pCommand
     return char 1 to -2 of (shell(pCommand))
