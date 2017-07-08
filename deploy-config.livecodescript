@@ -111,6 +111,7 @@ function getConfigs
    /**
    * OPTIONAL
    * Backup the TARGET_DIR into BACKUP_DIR before deployment.
+   * NOTE: set to "" to NOT backup current directory before deploying new code
    *
    * @var string Full backup directory path e.g. `/tmp/`
    */
