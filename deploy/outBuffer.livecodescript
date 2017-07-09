@@ -17,21 +17,23 @@ end obHeader
 
 command obWrite pData
    put pData after sOutput
+   write pData to stdout
    
-   obUpdateBR
+   ###obUpdateBR
 end obWrite
 
 
 command obPut pData
    put pData & return after sOutput
+   write pData & return to stdout
    
-   obUpdateBR
+   ##obUpdateBR
 end obPut
 
 
 command obFlush
    -- write the output buffer to stdout
-   write sOutput to stdout
+   ###write sOutput to stdout
    
    obUpdateBR
 end obFlush
@@ -56,7 +58,7 @@ command obStart
 end obStart
 
 
-function obMergeFile pFilePath
+command obMergeFile pFilePath
    local tPageBuffer, tBuffer
    
    put URL format("binfile:%s", pFilePath) into tPageBuffer
