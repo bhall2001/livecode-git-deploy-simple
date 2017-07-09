@@ -46,7 +46,8 @@ command executeDeploy
       insert the script of stack tConfigFile into back
       put getConfigs() into sConfigA
    else
-      throw "404"
+      ### TODO HANDLE EXPCEPTION
+      ###throw "404"
    end if
    
    /*=================[ Configuration end ]=================*/
@@ -147,7 +148,7 @@ command executeDeploy
             "describe --always >" &&  sConfigA["VERSION_FILE"]
    end if
    
-   ## TODO Handle Exclude
+   ## TODO Handle Exclude in Backup
    /*
    // Backup the TARGET_DIR
    // without the BACKUP_DIR for the case when it's inside the TARGET_DIR
@@ -208,6 +209,8 @@ command executeDeploy
       obWrite "<div class='output'>" & tResponse & "</div>"
       obFlush
    end repeat
+   
+   ### TODO TIMELIMIT?
    /*
    set_time_limit(TIME_LIMIT); // Reset the time limit for each command
    if (file_exists(TMP_DIR) && is_dir(TMP_DIR)) {
@@ -226,6 +229,8 @@ command executeDeploy
    $output .= ob_get_contents();
    ob_flush(); // Try to output everything as it happens
    
+   
+   ### TODO ERROR HANDLING
    // Error handling and cleanup
    if ($return_code !== 0) {
    header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
@@ -253,6 +258,7 @@ command executeDeploy
       obFlush
    end if
    
+   ### TODO EMAIL RESULTS
    /*
    $error = sprintf(
    'Deployment error on %s using %s!'
