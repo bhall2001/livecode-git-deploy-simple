@@ -61,6 +61,7 @@ command executeDeploy
       obHeader gGlobalsA["$_SERVER"]["SERVER_PROTOCOL"] & "403 Forbidden", true, 403
    end if
    
+   -- merge in HTML header content
    obMergeFile tFilePath & "htmlHeader.lc"
    
    if (gGlobalsA["$_GET"]["sat"] is empty) \
@@ -113,6 +114,7 @@ command executeDeploy
       obFlush
    end repeat
    
+   -- everything looks good. Let's go!
    obPut "Environment OK."
    obPut "Using configuration defined in" && tConfigFile
    
@@ -121,6 +123,7 @@ command executeDeploy
    
    // ===========[ Pre-Deployment steps ]===========
    
+   -- Check if initial deployment or updating an existing one
    if there is not a folder sConfigA["TMP_DIR"] then
       _AddCommand "git clone --depth=1 --branch" && sConfigA["BRANCH"] && \
             sConfigA["REMOTE_REPOSITORY"] && \
@@ -139,7 +142,6 @@ command executeDeploy
    if (sConfigA["UPDATE_SUBMODULES"]) then
       _AddCommand "git submodule update --init --recursive"
    end if
-   
    
    -- Describe the deployed version
    if sConfigA["VERSION_FILE"] is not empty then
@@ -178,7 +180,7 @@ command executeDeploy
       _AddCommand "tar -zcvf" && sConfigA["BACKUP_DIR"] & tTargetBase & "-" & \
             base64Encode(md5Digest(sConfigA["TARGET_DIR"])) & "-" & tOutputDate & ".tar.gz" && \
             sConfigA["TARGET_DIR"]
-      --exclude=" & sConfigA["BACKUP_DIR"] & "*" && "
+      --exclude=" & sConfigA["BACKUP_DIR"] & "*" && "...
       
    end if
    
