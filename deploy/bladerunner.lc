@@ -1,0 +1,63 @@
+<?lc
+-- determine if request is from web or script
+global gGlobalsA
+
+write "hello" & CRLF to stdout
+
+try
+   put $_SERVER into gGlobalsA["$_SERVER"]
+   put $_GET into gGlobalsA["$_GET"]
+   put $_POST into gGlobalsA["$_POST"]
+catch e
+   write "10" & CRLF to stdout
+   write e & CRLF to stdout
+end try
+
+
+try   
+   if $0 is not strictly nothing then     
+   
+      repeat with i = 0 to ($# - 1)      
+         switch i
+            case 0
+               put $0 into gGlobalsA["$0"]
+               break
+            case 1
+               put $1 into gGlobalsA["$1"]
+               break
+            case 2
+               put $2 into gGlobalsA["$2"]
+               break
+            case 3
+               put $3 into gGlobalsA["$3"]
+               break
+            case 4
+               put $4 into gGlobalsA["$4"]
+               break
+            case 5
+               put $5 into gGlobalsA["$5"]
+               break
+            case 6
+               put $6 into gGlobalsA["$6"]
+               break
+            case 7
+               put $7 into gGlobalsA["$7"]
+               break
+            case 8
+               put $8 into gGlobalsA["$8"]
+               break
+            case 9
+               put $9 into gGlobalsA["$9"]
+               break
+            default
+               exit repeat
+         end switch
+      end repeat
+      
+   end if
+   
+catch e
+   write "error: " to stdout
+   write e & CRLF to stdout
+end try
+
