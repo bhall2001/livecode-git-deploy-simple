@@ -15,9 +15,7 @@ local sCommandA
 
 on libraryStack
    put "" into sCommandA
-    
-   put "thisisatest" into gGlobalsA["$_GET"]["sat"]
-         
+           
    executeDeploy
 end libraryStack
 
