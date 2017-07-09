@@ -39,7 +39,7 @@ command executeDeploy
    set the itemDelimiter to tOldDelim
    
    -- load out buffer library
-   insert the script of stack (tFilePath & "../libraries/outBuffer.livecodescript") into back
+   insert the script of stack (tFilePath & "outBuffer.livecodescript") into back
    
    -- load configuration file
    if there is a file tConfigFile then
