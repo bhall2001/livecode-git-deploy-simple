@@ -118,7 +118,7 @@ command executeDeploy
    obPut "Deploying" && sConfigA["REMOTE_REPOSITORY"] & ";" & sConfigA["BRANCH"]
    obPut "to       " && sConfigA["TARGET_DIR"] 
    
-   // =================[ Pre-Deployment steps ]===
+   // ===========[ Pre-Deployment steps ]===========
    
    if there is not a folder sConfigA["TMP_DIR"] then
       _AddCommand "git clone --depth=1 --branch" && sConfigA["BRANCH"] && \
@@ -181,7 +181,7 @@ command executeDeploy
       
    end if
    
-   // ==================================================[ Deployment ]===
+   // ===========[ Deployment ]===========
    
    -- Assemble exclude parameters
    local tExclude, tDelete
@@ -199,7 +199,7 @@ command executeDeploy
    _AddCommand "rsync -rltgoDzvO" && sConfigA["TMP_DIR"] && sConfigA["TARGET_DIR"] && \
          tDelete && tExclude
    
-   // =======================[ Run the command steps ]===
+   // ===========[ Run the commands ]===========
    local tResponse
    repeat with i = 1 to number of elements of sCommandA
       put shelly(sCommandA[i]) into tResponse
@@ -239,7 +239,7 @@ command executeDeploy
    );
    */
    
-   // =======================================[ Post-Deployment steps ]===
+   // ===========[ Post-Deployment steps ]===========
    
    -- Remove the TMP_DIR (depends on CLEAN_UP)
    if sConfigA["CLEAN_UP"] then
