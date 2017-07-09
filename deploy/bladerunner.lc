@@ -2,14 +2,11 @@
 -- determine if request is from web or script
 global gGlobalsA
 
-write "hello" & CRLF to stdout
-
 try
    put $_SERVER into gGlobalsA["$_SERVER"]
    put $_GET into gGlobalsA["$_GET"]
    put $_POST into gGlobalsA["$_POST"]
 catch e
-   write "10" & CRLF to stdout
    write e & CRLF to stdout
 end try
 

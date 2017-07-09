@@ -5,21 +5,17 @@ require "deploy/bladerunner.lc"
  
 try   
    if $0 is not strictly nothing then
-      write "2" & CRLF to stdout
       put the itemDelimiter into tDelim
       set the itemDelimiter to "="
       put gGlobalsA["$0"] into tParam0
-      write (item 1 of tParam0) & CRLF to stdout
       put item -1 of tParam0 into gGlobalsA["$_GET"][(item 1 of tParam0)]
       set the itemDelimiter to tDelim
    end if
    
 catch e
-   write "3" & CRLF to stdout
    write e & CRLF to stdout
 end try
 
-write gGlobalsA["$_GET"]["sat"] & CRLF to stdout
 start using stack "deploy/deploy.livecodescript"
 
 
