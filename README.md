@@ -3,8 +3,23 @@ _Automatically deploy code using Livecode and Git._
 
 # STATE OF THE PROJECT
 
-This script is not funcitonal yet. Updates on progress will get posted
-here.
+BASIC functionality appears to be working at this time. I am developing on
+MacOS 10.12.5 as a reference point ;-) You should be able to deploy
+repositories via command line (assuming you have Livecode Server set up
+for this on your system) or via a web browser.
+  
+What's not working?
+- email results
+- exclude on backup
+- exception handling
+- timeout on shell commands (could use some help here...)
+
+Also, I have not done any testing yet with Github/Bitbucket yet. It's working
+locally. I don't see any reason that this should not work though within the
+confines of "What's not working".
+
+If you see an error 23 message from rsync, that's most likely a permissions
+issue on the directory you're deploying to.
 
 ## Requirements
 
