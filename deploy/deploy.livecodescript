@@ -60,17 +60,19 @@ command executeDeploy
       obHeader gGlobalsA["$_SERVER"]["SERVER_PROTOCOL"] & "403 Forbidden", true, 403
    end if
    
-   obPut obMergeFile(tFilePath & "htmlHeader.lc")
+   obMergeFile tFilePath & "htmlHeader.lc"
    
    if (gGlobalsA["$_GET"]["sat"] is empty) \
          or (gGlobalsA["$_GET"]["sat"] is not sConfigA["SECRET_ACCESS_TOKEN"]) then
       obPut "<h2>ACCESS DENIED!</h2>"
+      obFlush
       exit to top
    end if
    
    -- Dope slap if default access token used...
    if sConfigA["SECRET_ACCESS_TOKEN"] is "BetterChangeMeNowOrSufferTheConsequences" then
       obPut "<h2>You're suffering the consequences!<br>Change the SECRET_ACCESS_TOKEN from it's default value!</h2>"
+      obFlush
       exit to top
    end if
    
